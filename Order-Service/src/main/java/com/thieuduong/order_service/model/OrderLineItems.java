@@ -3,6 +3,8 @@ package com.thieuduong.order_service.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+@Entity
+@Table(name = "t_order_line_items")
 public class OrderLineItems {
 
 	@Id

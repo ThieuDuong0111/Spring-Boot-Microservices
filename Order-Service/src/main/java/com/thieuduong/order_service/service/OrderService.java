@@ -4,12 +4,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.thieuduong.order_service.dto.InventoryResponse;
 import com.thieuduong.order_service.dto.OrderLineItemsDTO;
 import com.thieuduong.order_service.dto.OrderRequest;
+import com.thieuduong.order_service.event.OrderPlacedEvent;
 import com.thieuduong.order_service.model.Order;
 import com.thieuduong.order_service.model.OrderLineItems;
 import com.thieuduong.order_service.repository.OrderRepository;
@@ -22,23 +25,27 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class OrderService {
 
-//	private OrderRepository orderRepository;
+	@Autowired
+	private OrderRepository orderRepository;
 //	private WebClient.Builder webClientBuilder;
-//	private ObservationRegistry observationRegistry;
-//	private ApplicationEventPublisher applicationEventPublisher;
-//
-//	public String placeOrder(OrderRequest orderRequest) {
-//		Order order = new Order();
-//		order.setOrderNumber(UUID.randomUUID().toString());
-//
-//		List<OrderLineItems> orderLineItems = orderRequest
-//			.getOrderLineItemsDtoList()
-//			.stream()
-//			.map(this::mapToDto)
-//			.toList();
-//
-//		order.setOrderLineItemsList(orderLineItems);
-//
+	private ObservationRegistry observationRegistry;
+	private ApplicationEventPublisher applicationEventPublisher;
+
+	public String placeOrder(OrderRequest orderRequest) {
+		Order order = new Order();
+		order.setOrderNumber(UUID.randomUUID().toString());
+
+		List<OrderLineItems> orderLineItems = orderRequest
+			.getOrderLineItemsDtoList()
+			.stream()
+			.map(this::mapToDto)
+			.toList();
+
+		order.setOrderLineItemsList(orderLineItems);
+
+		orderRepository.save(order);
+		return "";
+
 //		List<String> skuCodes = order.getOrderLineItemsList().stream()
 //			.map(OrderLineItems::getSkuCode)
 //			.toList();
@@ -74,14 +81,14 @@ public class OrderService {
 //					"Product is not in stock, please try again later");
 //			}
 //		});
-//
-//	}
-//
-//	private OrderLineItems mapToDto(OrderLineItemsDTO orderLineItemsDTO) {
-//		OrderLineItems orderLineItems = new OrderLineItems();
-//		orderLineItems.setPrice(orderLineItemsDTO.getPrice());
-//		orderLineItems.setQuantity(orderLineItemsDTO.getQuantity());
-//		orderLineItems.setSkuCode(orderLineItemsDTO.getSkuCode());
-//		return orderLineItems;
-//	}
+
+	}
+
+	private OrderLineItems mapToDto(OrderLineItemsDTO orderLineItemsDTO) {
+		OrderLineItems orderLineItems = new OrderLineItems();
+		orderLineItems.setPrice(orderLineItemsDTO.getPrice());
+		orderLineItems.setQuantity(orderLineItemsDTO.getQuantity());
+		orderLineItems.setSkuCode(orderLineItemsDTO.getSkuCode());
+		return orderLineItems;
+	}
 }
