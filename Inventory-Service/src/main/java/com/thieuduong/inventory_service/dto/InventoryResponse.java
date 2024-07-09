@@ -1,4 +1,4 @@
-package com.thieuduong.order_service.dto;
+package com.thieuduong.inventory_service.dto;
 
 public class InventoryResponse {
 	
@@ -20,5 +20,4 @@ public class InventoryResponse {
 	public void setInStock(boolean isInStock) {
 		this.isInStock = isInStock;
 	}
-
 }

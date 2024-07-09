@@ -27,8 +27,12 @@ public class OrderService {
 
 	@Autowired
 	private OrderRepository orderRepository;
-//	private WebClient.Builder webClientBuilder;
+
+	@Autowired
+	private WebClient.Builder webClientBuilder;
+
 	private ObservationRegistry observationRegistry;
+
 	private ApplicationEventPublisher applicationEventPublisher;
 
 	public String placeOrder(OrderRequest orderRequest) {
@@ -38,20 +42,38 @@ public class OrderService {
 		List<OrderLineItems> orderLineItems = orderRequest
 			.getOrderLineItemsDtoList()
 			.stream()
-			.map(this::mapToDto)
+			.map(this::mapToEntity)
 			.toList();
 
 		order.setOrderLineItemsList(orderLineItems);
 
-		orderRepository.save(order);
-		return "";
+		List<String> skuCodes = order.getOrderLineItemsList().stream()
+			.map(OrderLineItems::getSkuCode)
+			.toList();
 
-//		List<String> skuCodes = order.getOrderLineItemsList().stream()
-//			.map(OrderLineItems::getSkuCode)
-//			.toList();
-//
-//		// Call Inventory Service, and place order if product is in
-//		// stock
+		InventoryResponse[] inventoryResponseArray = webClientBuilder
+			.build().get()
+			.uri("http://localhost:8082/api/inventory",
+				uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes)
+					.build())
+			.retrieve()
+			.bodyToMono(InventoryResponse[].class)
+			.block();
+		boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
+			.allMatch(InventoryResponse::isInStock);
+
+		if (allProductsInStock) {
+//			orderRepository.save(order);
+			// publish Order Placed Event
+//			applicationEventPublisher.publishEvent(
+//				new OrderPlacedEvent(this, order.getOrderNumber()));
+			return "Order Placed";
+		} else {
+			throw new IllegalArgumentException(
+				"Product is not in stock, please try again later");
+		}
+		// Call Inventory Service, and place order if product is in
+		// stock
 //		Observation inventoryServiceObservation = Observation.createNotStarted(
 //			"inventory-service-lookup",
 //			this.observationRegistry);
@@ -81,10 +103,9 @@ public class OrderService {
 //					"Product is not in stock, please try again later");
 //			}
 //		});
-
 	}
 
-	private OrderLineItems mapToDto(OrderLineItemsDTO orderLineItemsDTO) {
+	private OrderLineItems mapToEntity(OrderLineItemsDTO orderLineItemsDTO) {
 		OrderLineItems orderLineItems = new OrderLineItems();
 		orderLineItems.setPrice(orderLineItemsDTO.getPrice());
 		orderLineItems.setQuantity(orderLineItemsDTO.getQuantity());
